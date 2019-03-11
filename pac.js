@@ -2,12 +2,29 @@ class Pacman {
   //---------------------------------------------------------------------------
   // Construct a Pac-Man at x,y
   //---------------------------------------------------------------------------
-  constructor(x,y) {
-    this.direction = Direction.right;
+  constructor(x, y, direction = Direction.right) {
+    var scope = this;
+
     this.radius = 20;
     this.diameter = this.radius * 2;
+    this.direction = direction;
+    this.counter = 0;
+    this.mouth = Mouth.open;
 
     this.corral(x, y);
+
+    setInterval(function() {
+      scope.counter++;
+
+      if (scope.counter % 4 === 0)
+        scope.mouth = Mouth.open;
+      else if (scope.counter % 4 === 1 || scope.counter % 4 === 3)
+        scope.mouth = Mouth.half;
+      else if (scope.counter % 4 === 2)
+        scope.mouth = Mouth.closed;
+      
+      scope.draw();
+    }, 150);
   }
 
   //---------------------------------------------------------------------------
@@ -74,16 +91,28 @@ class Pacman {
     ctx.translate(this.x, this.y);
     
     // Rotations are clockwise. 0°/360° is the default.
-    // if (direction === down)
-    //   ctx.rotate(1.571); // π/2 (90°)
-    // else if (direction === left)
-    //   ctx.rotate(3.142); // π (180°)
-    // else if (direction === up)
-    //   ctx.rotate(4.712); // 3π/2 (270°)
+    if (this.direction === Direction.down)
+      ctx.rotate(1.571); // π/2 (90°)
+    else if (this.direction === Direction.left)
+      ctx.rotate(3.142); // π (180°)
+    else if (this.direction === Direction.up)
+      ctx.rotate(4.712); // 3π/2 (270°)
   
+    let startAngle = 0.785; // π/4 (45°)
+    let stopAngle = -0.785;
+
+    if (this.mouth === Mouth.half) {
+      startAngle /= 2;
+      stopAngle = -startAngle;
+    }
+    else if (this.mouth === Mouth.closed) {
+      startAngle = 0;
+      stopAngle = 6.284; // 2π (360°)
+    }
+
     // Draw Pac-Man. Because we translated to his location, his center is now at (0,0)
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius, Math.PI/7, -Math.PI/7, false)
+    ctx.arc(0, 0, this.radius, startAngle, stopAngle, false)
     ctx.lineTo(0,0);
     ctx.fill();
   
