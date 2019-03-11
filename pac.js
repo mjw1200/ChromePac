@@ -3,8 +3,6 @@ class Pacman {
   // Construct a Pac-Man at x,y
   //---------------------------------------------------------------------------
   constructor(x, y, direction = Direction.right) {
-    var scope = this;
-
     this.radius = 20;
     this.diameter = this.radius * 2;
     this.direction = direction;
@@ -12,6 +10,15 @@ class Pacman {
     this.mouth = Mouth.open;
 
     this.corral(x, y);
+    this.animate();
+  }
+
+  //---------------------------------------------------------------------------
+  // Animate the Pac. Just open and close his mouth every so many milliseconds
+  // forever. Pac-Man never really stops chewing, does he?
+  //---------------------------------------------------------------------------
+  animate() {
+    var scope = this;
 
     setInterval(function() {
       scope.counter++;
@@ -23,8 +30,8 @@ class Pacman {
       else if (scope.counter % 4 === 2)
         scope.mouth = Mouth.closed;
       
-      scope.draw();
-    }, 150);
+      scope.corral();
+    }, animationInterval);
   }
 
   //---------------------------------------------------------------------------
@@ -40,32 +47,37 @@ class Pacman {
   }
 
   //---------------------------------------------------------------------------
-  // Ensure that Pac-Man hasn't left the game board
+  // Ensure that Pac-Man hasn't left the game board. x and y are *suggested*
+  // coordinates, which will be normalized if they're out of bounds. corral()
+  // calls draw() - it's best not to call draw() directly, because there go
+  // your boundaries.
   //---------------------------------------------------------------------------
-  corral(x, y) {
+  corral(x = this.x, y = this.y) {
+    this.erase();
     this.extents(x,y);
 
     // Constrain X
-    if (this.xLeftExtent < leftBoundary)
-      x += (leftBoundary - this.xLeftExtent)
-    if (this.xRightExtent > rightBoundary)
-      x += (rightBoundary - this.xRightExtent)
+    if (this.xLeftExtent < Boundary.left)
+      x += (Boundary.left - this.xLeftExtent)
+    if (this.xRightExtent > Boundary.right)
+      x += (Boundary.right - this.xRightExtent)
     
     // Constrain Y
-    if (this.yTopExtent < upperBoundary)
-      y += (upperBoundary - this.yTopExtent);
-    if (this.yBottomExtent > lowerBoundary)
-      y += (lowerBoundary - this.yBottomExtent)
+    if (this.yTopExtent < Boundary.upper)
+      y += (Boundary.upper - this.yTopExtent);
+    if (this.yBottomExtent > Boundary.lower)
+      y += (Boundary.lower - this.yBottomExtent)
 
     this.x = x;
     this.y = y;
 
     this.extents(x,y);
+    this.draw();
   }
 
   //---------------------------------------------------------------------------------------
-  // erase
-  // Erases Pac-Man
+  // Erases Pac-Man. Don't call this function directly - let corral() do that before it
+  // normalizes Pac-Man's coordinates.
   //---------------------------------------------------------------------------------------
   erase() {
     ctx.fillStyle = 'black';
@@ -78,12 +90,10 @@ class Pacman {
   }
 
   //---------------------------------------------------------------------------------------
-  // erase
-  // Draws Pac-Man
+  // Draws Pac-Man. Don't call this function directly - let corral() do that after it norm-
+  // alizes Pac-Man's coordinates.
   //---------------------------------------------------------------------------------------
   draw() {    
-    this.erase();
-        
     // Set Pac-Man's trademark color
     ctx.fillStyle = '#FFFD38';
     
@@ -118,5 +128,33 @@ class Pacman {
   
     // Clear the transformation matrix, putting the origin back where it should be
     ctx.setTransform(1, 0, 0, 1, 0, 0);  
+  }
+  
+  //---------------------------------------------------------------------------------------
+  // Moves Pac-Man up, down, left, or right. This is subject to the boundary checking tha
+  // corral() does, so calling this function actually *suggests* a move.
+  //---------------------------------------------------------------------------------------
+  move(direction) {
+    let x = this.x;
+    let y = this.y;
+
+    if (direction === Direction.up) {
+      this.direction = Direction.up;
+      y -= speed;
+    }
+    else if (direction === Direction.down) {
+      this.direction = Direction.down;
+      y += speed;
+    }
+    else if (direction === Direction.left) {
+      this.direction = Direction.left;
+      x -= speed;
+    }
+    else if (direction === Direction.right) {
+      this.direction = Direction.right;
+      x += speed;     
+    }
+    
+    this.corral(x, y);
   }
 }
